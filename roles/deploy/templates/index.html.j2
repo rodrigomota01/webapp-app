@@ -2,11 +2,12 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>WebApp - APP Oraex</title>
+    <title>WebApp - {{ deploy_env }}</title>
 </head>
 <body>
-    <h1>Aplicação WebApp</h1>
+    <h1>WebApp - APP Oraex</h1>
     <p>Host: {{ ansible_hostname }}</p>
     <p>Ambiente: {{ deploy_env }}</p>
+    <p>Versao: {{ app_version }}</p>
 </body>
 </html>
