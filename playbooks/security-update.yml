@@ -1,0 +1,29 @@
+---
+- name: Security update nos servidores
+  hosts: all
+  gather_facts: false
+  become: true
+  any_errors_fatal: true
+
+  tasks:
+    - name: Aplicar patches de seguranca
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        security: true
+      register: update_result
+
+    - name: resultado do update
+      debug:
+        msg: "{{ update_result.msg | default('sem pacotes de seguranca pendentes') }}"
+
+    - name: checar se precisa reiniciar
+      command: needs-restarting -r
+      register: reboot_check
+      failed_when: false
+      changed_when: false
+
+    - name: aviso de reboot
+      debug:
+        msg: "{{ inventory_hostname }} precisa de reboot"
+      when: reboot_check.rc == 1

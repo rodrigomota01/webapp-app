@@ -1,0 +1,22 @@
+---
+- name: Verificar se existe index.html
+  ansible.builtin.stat:
+    path: /usr/share/nginx/html/index.html
+  register: current_index
+
+- name: Fazer backup do index.html atual
+  ansible.builtin.copy:
+    src: /usr/share/nginx/html/index.html
+    dest: /usr/share/nginx/html/index.html.bak
+    remote_src: true
+    mode: '0644'
+  when: current_index.stat.exists
+
+- name: Publicar novo index.html com versão e ambiente
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /usr/share/nginx/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx

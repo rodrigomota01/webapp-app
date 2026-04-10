@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>WebApp - APP Oraex</title>
+</head>
+<body>
+    <h1>Aplicação WebApp</h1>
+    <p>Host: {{ ansible_hostname }}</p>
+    <p>Ambiente: {{ deploy_env }}</p>
+    <p>Versão: {{ app_version }}</p>
+    <p>Deploy: {{ ansible_date_time.iso8601 }}</p>
+</body>
+</html>

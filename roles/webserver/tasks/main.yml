@@ -1,0 +1,18 @@
+---
+- name: Instalar nginx
+  ansible.builtin.dnf:
+    name: nginx
+    state: present
+
+- name: Configurar vhost do nginx
+  template:
+    src: webapp.conf.j2
+    dest: /etc/nginx/conf.d/webapp.conf
+    mode: '0644'
+  notify: Restart nginx
+
+- name: nginx habilitado e rodando
+  service:
+    name: nginx
+    state: started
+    enabled: true

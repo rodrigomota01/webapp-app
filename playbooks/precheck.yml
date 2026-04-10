@@ -1,0 +1,22 @@
+---
+- name: Precheck dos hosts
+  hosts: all
+  gather_facts: true
+  become: false
+
+  tasks:
+    - name: ping nos hosts
+      ansible.builtin.ping:
+
+    - name: info basica do host
+      debug:
+        msg: "{{ inventory_hostname }} - {{ ansible_distribution }} {{ ansible_distribution_version }} - kernel {{ ansible_kernel }}"
+
+    - name: checar espaco em disco
+      ansible.builtin.command: df -h /
+      register: disco
+      changed_when: false
+
+    - name: mostrar espaco
+      debug:
+        msg: "{{ disco.stdout_lines }}"

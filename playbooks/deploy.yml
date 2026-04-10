@@ -1,0 +1,83 @@
+---
+- name: Deploy rolling da aplicacao
+  hosts: all
+  gather_facts: true
+  become: true
+  serial: 1
+  any_errors_fatal: true
+
+  pre_tasks:
+    - name: Instalar nginx
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Configurar vhost
+      ansible.builtin.template:
+        src: ../roles/webserver/templates/webapp.conf.j2
+        dest: /etc/nginx/conf.d/webapp.conf
+        mode: '0644'
+      notify: Reiniciar nginx
+
+    # garante que sobe mesmo se o conf nao mudou
+    - name: Nginx rodando
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+  tasks:
+    - block:
+        - name: Backup do index.html atual
+          ansible.builtin.copy:
+            src: /usr/share/nginx/html/index.html
+            dest: /usr/share/nginx/html/index.html.bak
+            remote_src: true
+          ignore_errors: true
+
+        - name: Publicar novo index.html
+          ansible.builtin.template:
+            src: ../roles/deploy/templates/index.html.j2
+            dest: /usr/share/nginx/html/index.html
+            mode: '0644'
+          notify: Reiniciar nginx
+
+        - name: flush handlers antes do healthcheck
+          ansible.builtin.meta: flush_handlers
+
+        - name: Healthcheck porta 80
+          ansible.builtin.uri:
+            url: http://localhost/
+            status_code: 200
+          register: hc
+          retries: 4
+          delay: 5
+          until: hc.status == 200
+
+      rescue:
+        - name: Rollback index.html
+          copy:
+            src: /usr/share/nginx/html/index.html.bak
+            dest: /usr/share/nginx/html/index.html
+            remote_src: true
+          ignore_errors: true
+
+        - name: flush handlers pos rollback
+          ansible.builtin.meta: flush_handlers
+
+        - name: Falhar para parar nos outros hosts
+          ansible.builtin.fail:
+            msg: "falhou em {{ inventory_hostname }}, rollback executado"
+
+      always:
+        - name: Gravar log de auditoria
+          ansible.builtin.lineinfile:
+            path: /var/log/deploy_audit.log
+            line: "{{ ansible_date_time.iso8601 }} host={{ inventory_hostname }} env={{ deploy_env }} ver={{ app_version }} status={{ 'OK' if hc is defined and hc.status == 200 else 'FALHA' }}"
+            create: true
+
+  handlers:
+    - name: Reiniciar nginx
+      service:
+        name: nginx
+        state: restarted
