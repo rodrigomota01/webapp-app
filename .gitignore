@@ -1,0 +1,4 @@
+inventories/local/
+*.retry
+*.log
+.ansible/
