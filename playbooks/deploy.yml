@@ -54,6 +54,15 @@
           delay: 5
           until: hc.status == 200
 
+        - name: Resultado da pagina
+          ansible.builtin.command: curl -s http://localhost/
+          register: pagina
+          changed_when: false
+
+        - name: Exibir conteudo da pagina
+          debug:
+            msg: "{{ pagina.stdout }}"
+
       rescue:
         - name: Rollback index.html
           copy:
@@ -68,15 +77,6 @@
         - name: Falhar para parar nos outros hosts
           ansible.builtin.fail:
             msg: "falhou em {{ inventory_hostname }}, rollback executado"
-
-        - name: Resultado da pagina
-          ansible.builtin.command: curl -s http://localhost/
-          register: pagina
-          changed_when: false
-
-        - name: Exibir conteudo da pagina
-          debug:
-            msg: "{{ pagina.stdout }}"
 
       always:
         - name: Gravar log de auditoria
